@@ -17,7 +17,7 @@
 
 using namespace std;
 
-const char *words[] = {"mkdir", "cd", "chmod", "rmdir", "rm", "cat", "ln", "ps", "uname", "kill"};
+const char *words[] = {"mkdir", "cd", "chmod", "rmdir", "rm", "cat", "ln", "ps", "uname", "kill","exit"};
 
 struct command{
   const char **argv2;
@@ -456,6 +456,37 @@ void rmdir(char** argv){
 	}
 }
 
+void rm(char** argv){
+	//elimina un archivo
+	if (argv[1])
+	{
+		if (exists_archivo(argv[1])){
+				cout << argv[1]<< endl;
+				remove(argv[1]);
+				cout << "Archivo eliminado" << endl;
+		}else{
+			cout<<"No existe tal archivo."<<endl;
+		}
+	}
+}
+
+void cat(char** argv)
+{
+	string line;
+	ifstream archivo(argv[1], ios::in);
+	//archivo.open();
+	if (archivo.is_open()){
+		while(getline(archivo,line)){
+			cout<<line<<endl;
+		}
+		archivo.close();
+	}
+	/*
+	
+	*/
+
+}
+
 void ejecutar(char **argv){
     pid_t  pid;
     int    status;
@@ -584,7 +615,9 @@ int main (){
 		}else if(redirerrout){
 			redirectionErrorToOutput(argv);
 		}else if (strcmp(argv[0], "bye") == 0){    // exit if the user enters bye
-	        return 0;  
+	        return 0; 
+        }else if (strcmp(argv[0], "exit") == 0){    // exit if the user enters bye
+        return 0;  
 		}else if (strcmp(argv[0], "cd") == 0){
 			cd(argv);
 		}else if (strcmp(argv[0], "mkdir") == 0){
@@ -593,6 +626,11 @@ int main (){
 			chmod(argv);
 		}else if (strcmp(argv[0], "rmdir") == 0){
 			rmdir(argv);
+		}else if (strcmp(argv[0], "rm") == 0){
+			rm(argv);
+		}
+		else if (strcmp(argv[0], "cat") == 0){
+			cat(argv);
 		}else{
 			signal(SIGINT, SIG_IGN);       	        //The instructions said to ignore the SIGINT signal
 		    signal(SIGTERM, SIG_DFL);               //SIGTERM signal must be caught.
