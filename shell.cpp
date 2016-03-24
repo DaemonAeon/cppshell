@@ -363,7 +363,7 @@ void cd(char** argv){
 }
 
 void makedir(char** argv){
-	if (argv[1] && !strcmp(argv[1], " ")){
+	if (argv[1] && strcmp(argv[1], " ")!=0){
 		if (exists_archivo(argv[1])){
 			cout<<"Ya existe un archivo con ese nombre"<<endl;
 		}else{
