@@ -515,6 +515,7 @@ void cat(char** argv)
    stringstream StringOutPut;
    StringOutPut.str("");
    int i = 0;
+   bool checkCommand = true;
 	while(argv[i]!=NULL){
 
     if(strcmp(argv[i], "uname")==0){
@@ -528,12 +529,17 @@ void cat(char** argv)
         StringOutPut<<sysinfo.machine<<" ";
     }else if(strcmp(argv[i], "-a")==0){
         StringOutPut<<sysinfo.sysname<<" "<<sysinfo.nodename<<" "<<sysinfo.release<<" "<<sysinfo.machine<<" ";
+    }else{
+      checkCommand = false;
     }
 
     i++;
     }
-
-    cout<<StringOutPut.str()<<endl;;
+    if(checkCommand){
+      cout<<StringOutPut.str()<<endl;
+    }else{
+        cout<<"Comando no encontrado, error en sintaxis"<<endl;
+    }
   }
 
   void Kill(char** argv){
