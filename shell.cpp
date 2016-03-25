@@ -506,12 +506,6 @@ void cat(char** argv)
       perror("uname");
       exit(EXIT_FAILURE);
    }
-   /*cout << "System Name: "<<sysinfo.sysname<<endl;
-   cout << "Host Name: "<<sysinfo.nodename<<endl;
-   cout << "Release(Kernel) Version: "<<sysinfo.release<<endl;
-   cout << "Kernel Build Timestamp: "<<sysinfo.version<<endl;
-   cout << "Machine Arch: "<<sysinfo.machine<<endl;
-   cout << "Domain Name: "<<sysinfo.domainname<<endl;*/
    stringstream StringOutPut;
    StringOutPut.str("");
    int i = 0;
