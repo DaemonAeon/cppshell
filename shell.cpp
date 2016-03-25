@@ -14,6 +14,9 @@
 #include <fstream>
 #include <dirent.h>
 #include <pwd.h>
+#include <sys/utsname.h>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -51,7 +54,7 @@ char *my_generator (const char *text, int state){
 
     while (name = words[list_index]){
         list_index++;
-        if (strncmp (name, text, len) == 0) 
+        if (strncmp (name, text, len) == 0)
         	return dupstr (name);
     }
 
@@ -74,7 +77,7 @@ void parsear(char* c, char** argv){
         while (*c == ' ' || *c == '\t' || *c == '\n')
             *c++ = '\0';     /* replace white spaces with 0    */
           	*argv++ = c;          /* save the argument position     */
-        	while (*c != '\0' && *c != ' ' && *c != '\t' && *c != '\n') 
+        	while (*c != '\0' && *c != ' ' && *c != '\t' && *c != '\n')
                	c++;             /* skip the argument until ...    */
     }
     *argv = '\0';                 /* mark the end of argument list  */
@@ -117,7 +120,7 @@ void fork_pipes (int n, struct command *cmd){
 		printf("*** ERROR: exec failed\n");
 	    return;
 	}
-	
+
 }
 
 void redirectionOutput(char** argv){
@@ -129,7 +132,7 @@ void redirectionOutput(char** argv){
 		while(argv[i]!=NULL){
 			if(strcmp(argv[i], ">")==0){
 				argv[i] = NULL;
-				break;		
+				break;
 			}
 			i++;
 		}
@@ -137,7 +140,7 @@ void redirectionOutput(char** argv){
         if ((fd1 = creat(argv[i+1] , 0644)) < 0) {
             perror("Couldn't open the output file");
             exit(0);
-        }           
+        }
 
         dup2(fd1, STDOUT_FILENO);
         close(fd1);
@@ -147,16 +150,16 @@ void redirectionOutput(char** argv){
 	    _exit(1);
 
 	    // another syntax
-	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command  
+	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command
 	            printf("*** ERROR: exec failed\n");
 	            exit(1);
-	     */ 
-	}else if((pid) < 0){     
+	     */
+	}else if((pid) < 0){
         printf("fork() failed!\n");
         exit(1);
     }else {                                  /* for the parent:      */
 
-        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors) 
+        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors)
     }
 
 }
@@ -172,7 +175,7 @@ void redirectionInput(char** argv){
 		while(argv[i]!=NULL){
 			if(strcmp(argv[i], "<")==0){
 				argv[i] = NULL;
-				break;		
+				break;
 			}
 			i++;
 		}
@@ -180,24 +183,24 @@ void redirectionInput(char** argv){
         if ((fd0 = open(argv[i+1], O_RDONLY, 0)) < 0) {
             perror("Couldn't open input file");
             exit(0);
-        }           
+        }
 	        // dup2() copies content of fdo in input of preceeding file
-        dup2(fd0, 0); // STDIN_FILENO here can be replaced by 0 
+        dup2(fd0, 0); // STDIN_FILENO here can be replaced by 0
         close(fd0); // necessary
 	    execvp(*argv, argv);
 	    perror("execvp");
 	    _exit(1);
 
 	    // another syntax
-	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command  
+	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command
 	            printf("*** ERROR: exec failed\n");
 	            exit(1);
-	     */ 
-	}else if((pid) < 0){     
+	     */
+	}else if((pid) < 0){
         printf("fork() failed!\n");
         exit(1);
     }else {                                  /* for the parent:      */
-        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors) 
+        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors)
     }
 
 }
@@ -211,7 +214,7 @@ void redirectionOutputAndError(char** argv){
 		while(argv[i]!=NULL){
 			if(strcmp(argv[i], "&>")==0){
 				argv[i] = NULL;
-				break;		
+				break;
 			}
 			i++;
 		}
@@ -219,7 +222,7 @@ void redirectionOutputAndError(char** argv){
 	    if ((fd1 = creat(argv[i+1] , 0644)) < 0) {
 	        perror("Couldn't open the output file");
 	        exit(0);
-	    }           
+	    }
 
 	    dup2(fd1, STDOUT_FILENO);
 		dup2(fd1, STDERR_FILENO);
@@ -230,15 +233,15 @@ void redirectionOutputAndError(char** argv){
 	    _exit(1);
 
 	    // another syntax
-	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command  
+	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command
 	            printf("*** ERROR: exec failed\n");
 	            exit(1);
-	     */ 
-	}else if((pid) < 0){     
+	     */
+	}else if((pid) < 0){
         printf("fork() failed!\n");
         exit(1);
     }else {                                  /* for the parent:      */
-        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors) 
+        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors)
     }
 }
 
@@ -253,12 +256,12 @@ void redirectionAppendError(char** argv){
 		while(argv[i]!=NULL){
 			if(strcmp(argv[i], ">>")==0){
 				argv[i] = NULL;
-				break;		
+				break;
 			}
 			i++;
 		}
-		
-		
+
+
 		int fd = open(argv[i+1], O_RDWR | O_CREAT, S_IRUSR | S_IWUSR, O_APPEND);
 
 	    dup2(fd, STDOUT_FILENO);   // make stdout go to file
@@ -273,15 +276,15 @@ void redirectionAppendError(char** argv){
 	    _exit(1);
 
 	    // another syntax
-	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command  
+	    /*      if (!(execvp(*argv, argv) >= 0)) {     // execute the command
 	            printf("*** ERROR: exec failed\n");
 	            exit(1);
-	     */ 
-	}else if((pid) < 0){     
+	     */
+	}else if((pid) < 0){
         printf("fork() failed!\n");
         exit(1);
     }else {                                  /* for the parent:      */
-        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors) 
+        while (!(wait(&status) == pid)) ; // good coding to avoid race_conditions(errors)
     }
 
 }
@@ -292,58 +295,58 @@ void redirectionErrorToOutput(char** argv){
 	char arg2[] = "arg2";
 	char *args[] = { arg1, arg2, NULL };*/
 	int i = 0;
-	
+
 	while(argv[i]!=NULL){
 		if(strcmp(argv[i], "2>&!")==0){
-			argv[i] = NULL;		
-		}		
+			argv[i] = NULL;
+		}
 		i++;
 	}
 
-	int pipeForStdOut[2], pipeForStdErr[2]; 
-	std::string cntStdErr; 
+	int pipeForStdOut[2], pipeForStdErr[2];
+	std::string cntStdErr;
 
-	char buf[32] = {0}; 
-	ssize_t bytesRead; 
-	pid_t childPid; 
+	char buf[32] = {0};
+	ssize_t bytesRead;
+	pid_t childPid;
 
-	pipe(pipeForStdErr); 
+	pipe(pipeForStdErr);
 
-	childPid = fork(); 
-	if(childPid == -1){ 
-	    perror("fork"); 
-	    exit(-1); 
+	childPid = fork();
+	if(childPid == -1){
+	    perror("fork");
+	    exit(-1);
 	}else if(childPid == 0){
 		close(pipeForStdErr[0]); // parent keeps the input
-		if(dup2(pipeForStdErr[1], 2) < 0){ 
-		    perror("dup2.2"); 
-		    exit(-1); 
+		if(dup2(pipeForStdErr[1], 2) < 0){
+		    perror("dup2.2");
+		    exit(-1);
 		}
 
-		if(execv(*argv, argv) == -1){ 
-	      perror("execv"); 
-	      exit(-1); 
-	    } 
-	    exit(0); 
-	} 
-	wait(NULL); 
+		if(execv(*argv, argv) == -1){
+	      perror("execv");
+	      exit(-1);
+	    }
+	    exit(0);
+	}
+	wait(NULL);
 
-	fcntl(pipeForStdErr[0], F_SETFL, O_NONBLOCK  | O_ASYNC); 
+	fcntl(pipeForStdErr[0], F_SETFL, O_NONBLOCK  | O_ASYNC);
 	while(1) {
 	    bytesRead = read(pipeForStdErr[0], buf, sizeof(buf)-1);
 	    if (bytesRead <= 0) break;
 	    buf[bytesRead] = 0; // append null terminator
 	    cntStdErr += buf; // append what wuz read to the string
-	} 
+	}
 	const char * c = cntStdErr.c_str();
 	printf("%s",c);
 
-	close(pipeForStdErr[0]);  
+	close(pipeForStdErr[0]);
 }
 
 bool exists_archivo (const char* name) {
-  struct stat buffer;   
-  return (stat (name, &buffer) == 0); 
+  struct stat buffer;
+  return (stat (name, &buffer) == 0);
 }
 
 void cd(char** argv){
@@ -359,7 +362,7 @@ void cd(char** argv){
 		const char* homedir = pw->pw_dir;
 	    chdir(homedir);
 	}
-	
+
 }
 
 void makedir(char** argv){
@@ -406,7 +409,7 @@ int rmdir_R(const char *path){
           	if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, "..")){
              	continue;
           	}
-          	len = path_len + strlen(p->d_name) + 2; 
+          	len = path_len + strlen(p->d_name) + 2;
           	buf = (char*)malloc(len);
           	if (buf){
              	struct stat statbuf;
@@ -441,7 +444,7 @@ void rmdir(char** argv){
 		}else{
 			if (exists_archivo(argv[1])){
 				std::ifstream file(argv[1]);
-				file.seekg(0, ios::end); 
+				file.seekg(0, ios::end);
 				if (file.tellg()!=0){
 					rmdir(argv[1]);
 				}else{
@@ -482,15 +485,89 @@ void cat(char** argv)
 		archivo.close();
 	}
 	/*
-	
+
 	*/
 
 }
 
+//***************+++++++++++PS KILL AND UNAME++++++***********************************************************
+
+  void Ps(char** argv){
+
+    cout<<"Soy el ps"<<endl;
+
+  }
+
+  void Uname(char** argv){
+    cout<<"Soy el Uname"<<endl;
+    struct utsname sysinfo;
+
+    if (uname(&sysinfo) != 0) {
+      perror("uname");
+      exit(EXIT_FAILURE);
+   }
+   /*cout << "System Name: "<<sysinfo.sysname<<endl;
+   cout << "Host Name: "<<sysinfo.nodename<<endl;
+   cout << "Release(Kernel) Version: "<<sysinfo.release<<endl;
+   cout << "Kernel Build Timestamp: "<<sysinfo.version<<endl;
+   cout << "Machine Arch: "<<sysinfo.machine<<endl;
+   cout << "Domain Name: "<<sysinfo.domainname<<endl;*/
+   stringstream StringOutPut;
+   StringOutPut.str("");
+   int i = 0;
+	while(argv[i]!=NULL){
+
+    if(strcmp(argv[i], "uname")==0){
+        StringOutPut<<sysinfo.sysname<<" ";
+    } else if(strcmp(argv[i], "-n")==0){
+        StringOutPut<<sysinfo.nodename<<" ";
+    }else if(strcmp(argv[i], "-v")==0){
+        StringOutPut<<sysinfo.release<<" ";
+    }
+    else if(strcmp(argv[i], "-m")==0){
+        StringOutPut<<sysinfo.machine<<" ";
+    }else if(strcmp(argv[i], "-a")==0){
+        StringOutPut<<sysinfo.sysname<<" "<<sysinfo.nodename<<" "<<sysinfo.release<<" "<<sysinfo.machine<<" ";
+    }
+
+    i++;
+    }
+
+    cout<<StringOutPut.str()<<endl;;
+  }
+
+  void Kill(char** argv){
+      cout<<"Soy el Kill"<<endl;
+      if(strcmp(argv[1], "-9")==0){
+        if(!argv[2]){
+            if (kill( atoi(argv[2]), SIGKILL ) != 0){
+            cout<<"Ocurrio un error en kill"<<endl;
+          }
+        }else{
+          cout<<"No se encontró el proceso"<<endl;
+        }
+      }else{
+        cout<<"Comando no encontrado"<<endl;
+      }
+
+  }
+
+
+vector<string> split(string str, char delimiter) {
+      vector<string> split;
+      stringstream ss(str);
+      string tok;
+      while(getline(ss, tok, delimiter)) {
+          split.push_back(tok);
+        }
+      return split;
+}
+
+//***************++++++FIN PS KILL AND UNAME++++++++**********************************************************
 void ejecutar(char **argv){
     pid_t  pid;
     int    status;
-     
+
     if ((pid = fork()) < 0) {     /* fork a child process           */
         printf("*** ERROR: forking child process failed\n");
         return;
@@ -509,18 +586,18 @@ void ejecutarbackground(char **argv){
 	for(int i = 0; i < 1024; i++ ){
 		if(argv2[0][i]=='&'){
 			argv2[0][i] = '\0';
-			break;		
-		}	
+			break;
+		}
 	}
 	cout << endl;
 	for(int i = 0; i < 1024; i++ ){
 		cout<<argv2[0][i];
 		if(argv2[0][i]=='\0')
-			break;	
+			break;
 	}
     pid_t  pid;
     int    status;
-     
+
     if ((pid = fork()) < 0) {     /* fork a child process           */
         printf("*** ERROR: forking child process failed\n");
         return;
@@ -536,14 +613,14 @@ void ejecutarbackground(char **argv){
 int main (){
     char *buf;
     rl_attempted_completion_function = my_completion;
- 
+
     while((buf = readline("\nmi_sh>> "))!=NULL) {
 		char* argv[10];
 		int i = 0, j = 0;
 		bool pipeMe = false, redirout = false, redirinput = false, redirouterr = false, redirappenderr = false, redirerrout = false;// | > < &> >> 2>&1
         //enable auto-complete
         rl_bind_key('\t',rl_complete);
- 
+
         /*printf("cmd [%s]\n",buf);
         if (strcmp(buf,"quit")==0)
             break;*/
@@ -552,9 +629,9 @@ int main (){
             add_history(buf);
         }
 		parsear(buf, argv);
-	
+
 		cout << endl;
-	
+
 		while(argv[i]!=NULL){
 			if(strcmp(argv[i], "|") ==0 ){
 				pipeMe = true;
@@ -579,11 +656,11 @@ int main (){
 		}
 		if (pipeMe){
 			int h = 0;
-			
+
 			int f = 0;
 			i = 0;
 			char* coms[5][5];
-			
+
 			for(int w = 0; w < 5; w++){
 				for(int z = 0; z < 5; z++){
 					coms[w][z] = 0;
@@ -602,7 +679,7 @@ int main (){
 			}
 			/*command cmd[] = {{(const char**)coms[0]}, {(const char**)coms[1]}, {(const char**)coms[2]}, {(const char**)coms[3]}, {(const char**)coms[4]}};
 			fork_pipes (j+1, cmd);*/
-			command cmd[] = {{(const char**)coms[0]},{(const char**)coms[1]}, {(const char**)coms[2]} ,{(const char**)coms[3]},{(const char**)coms[4]}}; 
+			command cmd[] = {{(const char**)coms[0]},{(const char**)coms[1]}, {(const char**)coms[2]} ,{(const char**)coms[3]},{(const char**)coms[4]}};
 			fork_pipes(j, cmd);
 		}else if(redirout){
 			redirectionOutput(argv);
@@ -615,9 +692,9 @@ int main (){
 		}else if(redirerrout){
 			redirectionErrorToOutput(argv);
 		}else if (strcmp(argv[0], "bye") == 0){    // exit if the user enters bye
-	        return 0; 
+	        return 0;
         }else if (strcmp(argv[0], "exit") == 0){    // exit if the user enters bye
-        return 0;  
+        return 0;
 		}else if (strcmp(argv[0], "cd") == 0){
 			cd(argv);
 		}else if (strcmp(argv[0], "mkdir") == 0){
@@ -631,11 +708,17 @@ int main (){
 		}
 		else if (strcmp(argv[0], "cat") == 0){
 			cat(argv);
-		}else{
+		}else if(strcmp(argv[0], "ps") == 0){
+      	Ps(argv);
+    }else if(strcmp(argv[0], "uname")== 0){
+        	Uname(argv);
+    }else if(strcmp(argv[0], "kill")== 0){
+      	Kill(argv);
+    }else{
 			signal(SIGINT, SIG_IGN);       	        //The instructions said to ignore the SIGINT signal
 		    signal(SIGTERM, SIG_DFL);               //SIGTERM signal must be caught.
 			if(strrchr(buf,'&')==NULL){
-		       	ejecutar(argv);	
+		       	ejecutar(argv);
 			}else{
 				ejecutarbackground(argv);
 			}
