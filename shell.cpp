@@ -2,6 +2,7 @@
 #include <readline/history.h>
 #include <stdlib.h>
 #include <iostream>
+#include <dirent.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,7 +22,11 @@
 using namespace std;
 
 const char *words[] = {"mkdir", "cd", "chmod", "rmdir", "rm", "cat", "ln", "ps", "uname", "kill","exit"};
-
+inline bool isInteger(const string &);
+inline vector<string> readStats(string);
+vector<string> split(string,char);
+const char *DIR_PROC = "/proc";
+void checkCommands(string StringOutPut);
 struct command{
   const char **argv2;
 };
@@ -491,15 +496,162 @@ void cat(char** argv)
 }
 
 //***************+++++++++++PS KILL AND UNAME++++++***********************************************************
+inline vector<string> readStats(string stats){
+    vector<string> parseStats = split(stats,' ');
+    vector<string> retVal;
+    long TIME;
+    retVal.push_back(parseStats[0]);
+    retVal.push_back(parseStats[6]);
+    retVal.push_back(parseStats[13]);
+    retVal.push_back(parseStats[1]);
+    return retVal;
+}
 
-  void Ps(char** argv){
+inline bool isInteger(const string &s)
+{
+  if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;
+  char * p ;
+  strtol(s.c_str(), &p, 10) ;
+  return (*p == 0) ;
+}
 
-    cout<<"Soy el ps"<<endl;
+vector<string> split(string str, char delimiter) {
+    vector<string> split;
+    stringstream ss(str);
+    string tok;
+    while(getline(ss, tok, delimiter)) {
+        split.push_back(tok);
+      }
+    return split;
+}
+
+
+  void PsGeneral(int argc ,char** argv,string  StringOutPut){
+    int cont = 0;
+    vector< vector<string> > ALL_STATS;
+  	if (argc != 1){
+  		exit(1);
+  	}
+
+  	string RUN_DIR(argv[0]);
+  	RUN_DIR+="/cat";
+  	stringstream SS;
+  	int fd_p2c[2], fd_c2p[2], bytes_read;
+      pid_t childpid;
+      char readbuffer[256];
+      string receive = "";
+  	//vector<string> PID;
+  	DIR *dir;
+  	struct dirent *ent;
+
+  	if ((dir = opendir (DIR_PROC)) != NULL&& cont ==1) {
+
+  	  /* print all the files and directories within directory */
+  	  while ((ent = readdir (dir)) != NULL) {
+
+  	  	receive="";
+  	  	if (isInteger(ent->d_name)){
+  			 if (pipe(fd_p2c) != 0 || pipe(fd_c2p) != 0)  {
+  			        cerr << "Failed to pipe\n";
+  			        exit(1);
+  			}
+  			childpid = fork();
+
+  			if (childpid < 0){
+  			    cout << "Fork failed" << endl;
+  			    exit(-1);
+  			}else if (childpid == 0){
+  			    if (dup2(fd_p2c[0], 0) != 0 ||
+  			        close(fd_p2c[0]) != 0 ||
+  			        close(fd_p2c[1]) != 0){
+
+  			            cerr << "Child: failed to set up standard input\n";
+  			            exit(1);
+  			    }
+  			    if (dup2(fd_c2p[1], 1) != 1 ||
+  			       close(fd_c2p[1]) != 0 ||
+  			       close(fd_c2p[0]) != 0){
+
+  			      		cerr << "Child: failed to set up standard output\n";
+  			            exit(1);
+  			    }
+
+  			    string DIR(DIR_PROC);
+  			    char *arg[] = {(char *)(DIR+"/"+ent->d_name+"/stat").c_str(), (char *)0};
+  		        execv(RUN_DIR.c_str(), arg);
+  		        exit(1);
+  		    }else{
+  		    	close(fd_p2c[0]);
+          		close(fd_c2p[1]);
+  				while (1){
+              		bytes_read = read(fd_c2p[0], readbuffer, sizeof(readbuffer)-1);
+
+              		if (bytes_read <= 0)
+                  		break;
+
+              		readbuffer[bytes_read] = '\0';
+              		receive += readbuffer;
+          		}
+         			close(fd_c2p[0]);
+         			ALL_STATS.push_back(readStats(receive));
+         			//cout << "PID" << '\t' << "TTY" << '\t' << "TIME" << '\t' << "CMD" << endl;
+         			 //cout << "From child: <<" << receive << ">>" << endl;
+  		    }
+
+  	  	}
+
+  	  }
+  	  closedir (dir);
+  	} else {
+  	  /* could not open directory */
+  	  //perror ("");
+  	}
+  	/* code */
+
+//  	cout << "PID" << '\t' << "TTY" << '\t' << "TIME" << '\t' << "CMD" << endl;
+  /*	for (int i = 0; i < ALL_STATS.size() ; i++){
+  		cout << ALL_STATS[i][0] << '\t' << ALL_STATS[i][1] << '\t' << ALL_STATS[i][2] << '\t' << ALL_STATS[i][3] << endl;
+  }*/
+
+    checkCommands(StringOutPut);
 
   }
 
+  void Ps(char** argv){
+
+    stringstream StringOutPut;
+    StringOutPut.str("");
+    int i = 0;
+    bool checkCommand = true;
+    int control = 0;
+    while(argv[i]!=NULL){
+
+      if(strcmp(argv[i], "ps")==0 ||strcmp(argv[i], "-a")==0){
+        if(control==0)
+          StringOutPut<<"ps -a";
+
+        control++;
+      } else if(strcmp(argv[i], "-u")==0){
+        StringOutPut<<" -u";
+      }else if(strcmp(argv[i], "-x")==0){
+        StringOutPut<<" -x";
+      }
+      else if(strcmp(argv[i], "-e")==0){
+          StringOutPut<<" -e";
+      }else{
+        checkCommand = false;
+      }
+
+      i++;
+      }
+      if(checkCommand){
+        PsGeneral(1,argv,StringOutPut.str());
+      }else{
+          cout<<"Comando no encontrado, error en sintaxis"<<endl;
+      }
+  }
+
   void Uname(char** argv){
-    cout<<"Soy el Uname"<<endl;
     struct utsname sysinfo;
 
     if (uname(&sysinfo) != 0) {
@@ -512,7 +664,7 @@ void cat(char** argv)
    bool checkCommand = true;
 	while(argv[i]!=NULL){
 
-    if(strcmp(argv[i], "uname")==0){
+    if(strcmp(argv[i], "uname")==0 || strcmp(argv[i], "-s")==0){
         StringOutPut<<sysinfo.sysname<<" ";
     } else if(strcmp(argv[i], "-n")==0){
         StringOutPut<<sysinfo.nodename<<" ";
@@ -537,7 +689,6 @@ void cat(char** argv)
   }
 
   void Kill(char** argv){
-      cout<<"Soy el Kill"<<endl;
       if(strcmp(argv[1], "-9")==0){
         if(!argv[2]){
             if (kill( atoi(argv[2]), SIGKILL ) != 0){
@@ -551,18 +702,7 @@ void cat(char** argv)
       }
 
   }
-
-
-vector<string> split(string str, char delimiter) {
-      vector<string> split;
-      stringstream ss(str);
-      string tok;
-      while(getline(ss, tok, delimiter)) {
-          split.push_back(tok);
-        }
-      return split;
-}
-
+void checkCommands(string StringOutPut){system(StringOutPut.c_str());}
 //***************++++++FIN PS KILL AND UNAME++++++++**********************************************************
 void ejecutar(char **argv){
     pid_t  pid;
