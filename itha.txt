@@ -1,3 +1,5 @@
-ls
-q
-Hola mundo
+hola
+mundo
+cruel
+inco
+itos en el aire

@@ -14,6 +14,8 @@
 #include <fstream>
 #include <dirent.h>
 #include <pwd.h>
+#include <vector>
+#define LINELEN 256
 
 using namespace std;
 
@@ -22,6 +24,9 @@ const char *words[] = {"mkdir", "cd", "chmod", "rmdir", "rm", "cat", "ln", "ps",
 struct command{
   const char **argv2;
 };
+void copy_file(FILE *fin, FILE* fout, int writeLineNumbers);
+void send_to_stdout(FILE*);
+void numberLines();
 
 void *xmalloc (int size){
     void *buf;
@@ -472,6 +477,7 @@ void rm(char** argv){
 
 void cat(char** argv)
 {
+	/*
 	string line;
 	ifstream archivo(argv[1], ios::in);
 	//archivo.open();
@@ -481,10 +487,119 @@ void cat(char** argv)
 		}
 		archivo.close();
 	}
-	/*
-	
-	*/
+}
+*/
 
+    char cpr[]= "-n";
+    char cpr2[]= ">>";
+    FILE *fp;
+    /*if the input does not contain -n*/
+
+    if(sizeof(argv) >1)
+    if(strcmp(cpr,argv[1])!=0)
+    {
+//        printf("Trace ... about to open the file\n");
+          if((fp= fopen(argv[1], "r"))!=NULL)
+          {
+             copy_file(fp, stdout, 0);
+             fclose(fp);
+             //exit(1);
+          }
+          /*else it's nothing.*/
+          else
+          {
+//              printf("Trace ... about to perror\n");
+              perror("could not open the file.");
+              //exit(1);
+          }
+    }
+    /*if the user only type in one command then echo input*/
+//    printf("Trace ... about to test argc\n");
+    if(sizeof(argv)==1)
+    {
+//      printf("Trace ... about to send_to_stdout(stdin)\n");
+     // send_to_stdout(stdin);
+        copy_file(stdin, stdout, 0);
+        //exit(1);
+    }
+   /*else input must contains -n*/
+    else if(strcmp(cpr2,argv[1])==0)
+    {
+    	cout<<"tiene dos cositos"<<endl;
+    }else{
+        /*if input only has -n then just echo and number the output lines*/
+        if(sizeof(argv)==2)
+        {
+//             printf("Trace ... about to do numberFileLines(stdin)\n");
+        //     numberFileLines(stdin);
+               copy_file(stdin, stdout, 1);
+               //sexit(1);
+        }
+        /*else just output files and number all the lines*/
+        else
+        {
+             if((fp= fopen(argv[2], "r"))!=NULL)
+             {
+//               printf("Trace ... about to do numberFileLines(fp)\n");
+                 copy_file(fp, stdout, 1);
+                 fclose(fp);
+                 //exit(1);
+             }
+             else
+             {
+                //perror("1could not open the file.");
+                //exit(1);
+             }
+        }
+    }
+}
+
+void copy_file(FILE *fin, FILE* fout, int writeLineNumbers)
+{
+    char line[LINELEN];
+    int lineno = 1;
+
+    while (fgets(line, LINELEN, fin))
+    {
+        if (writeLineNumbers)
+            printf("%d ", lineno);
+
+        if (fputs(line, fout) == EOF)
+        {
+            perror("Write to stdout failed.");
+            return;
+        }
+
+        ++lineno;
+    }
+}
+               
+/***********************************************/
+
+void ln(char** argv){
+	string argumento = argv[0];
+	vector<string> ruta;
+    vector<string> archivos;
+
+    char* duplicado2 = strdup(argumento.c_str());
+    char* token2 = strtok(duplicado2, " ");
+    while(token2 != NULL){
+        archivos.push_back(string(token2));
+        // the call is treated as a subsequent calls to strtok:
+        // the function continues from where it left in previous invocation
+        token2 = strtok(NULL, " ");
+    }
+
+    string archivo1 = archivos[0];
+    string archivo2 = archivos[1];
+
+    if (symlink(archivo1.c_str(), archivo2.c_str()) != -1 )
+    {
+    	
+    }
+    else{
+    	cout << "Error al ejecutar ln" << endl;
+    }
 }
 
 void ejecutar(char **argv){
@@ -617,7 +732,7 @@ int main (){
 		}else if (strcmp(argv[0], "bye") == 0){    // exit if the user enters bye
 	        return 0; 
         }else if (strcmp(argv[0], "exit") == 0){    // exit if the user enters bye
-        return 0;  
+        	return 0;  
 		}else if (strcmp(argv[0], "cd") == 0){
 			cd(argv);
 		}else if (strcmp(argv[0], "mkdir") == 0){
@@ -628,9 +743,10 @@ int main (){
 			rmdir(argv);
 		}else if (strcmp(argv[0], "rm") == 0){
 			rm(argv);
-		}
-		else if (strcmp(argv[0], "cat") == 0){
+		}	else if (strcmp(argv[0], "cat") == 0){
 			cat(argv);
+		}else if (strcmp(argv[0], "ln") == 0){
+			ln(argv);
 		}else{
 			signal(SIGINT, SIG_IGN);       	        //The instructions said to ignore the SIGINT signal
 		    signal(SIGTERM, SIG_DFL);               //SIGTERM signal must be caught.
