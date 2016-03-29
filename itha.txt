@@ -1,4 +1,5 @@
-hola
+ho
+a
 mundo
 cruel
 inco
